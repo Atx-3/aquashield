@@ -60,7 +60,7 @@ All Ollama communication is encapsulated in [`app/llm.py`](app/llm.py) via the `
 ## Project Structure
 
 ```
-SIH/
+AQUA_SHIELD_AI/
 ├── app/
 │   ├── __init__.py          # Package exports
 │   ├── llm.py              # Modular Ollama HTTP client & configurable timeout

@@ -300,7 +300,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"hours": 6}' http://localh
 
 ## ⚠️ Limitations & Honest Status
 
-Aqua Shield is a **hackathon prototype**. This section says where it falls short, so nobody has to find out the hard way.
+Aqua Shield is a **prototype**. This section says where it falls short, so nobody has to find out the hard way.
 
 **Model & data**
 - **The U-Net is weak.** Validation Dice is **7.94%** (IoU 4.13%, precision 4.45%, recall 36.9%), so it flags many dark areas that aren't oil (wind shadows, natural seeps, calm water).
@@ -366,7 +366,5 @@ Aqua Shield is a **hackathon prototype**. This section says where it falls short
 
 | Yuvraj | Ishant |
 |:---:|:---:|
-
-*Built for the Smart India Hackathon 2026*
 
 </div>
