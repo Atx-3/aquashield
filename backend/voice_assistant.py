@@ -71,7 +71,7 @@ Respond ONLY with valid JSON: {"function": "<name>", "args": {}}"""
                 "data": None
             }
 
-        # 1. First try deterministic intent parser (instant, zero network latency, 100% reliable for SIH demo)
+        # 1. First try deterministic intent parser (instant, zero network latency, 100% reliable for demos)
         func_name, args = cls._parse_intent_rule_based(cleaned_text)
 
         # 2. If no rule matched and Ollama is running, try Ollama

@@ -1,5 +1,4 @@
 # Environment & Secrets
-.env
 *.env
 *.pem
 *.key
@@ -16,7 +15,6 @@ __pycache__/
 htmlcov/
 
 # IDEs & System Files
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -31,3 +29,5 @@ tmp/
 
 # Dynamic Investigation State Outputs
 data/investigations/
+config.bat
+node_modules

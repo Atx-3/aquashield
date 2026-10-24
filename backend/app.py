@@ -21,6 +21,7 @@ The investigation pipeline the UI walks through (8 steps):
   1 Evidence -> 2 Spill Detection -> 3 Characterization -> 4 Rewind (hindcast)
   -> 5 Vessel Analysis -> 6 Correlation -> 7 Forecast -> 8 Report
 """
+import utils.session
 import os
 import sys
 import uuid
