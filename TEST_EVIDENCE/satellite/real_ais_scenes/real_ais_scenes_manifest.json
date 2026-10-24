@@ -1,0 +1,262 @@
+[
+  {
+    "scene_id": "S1A_IW_GRDH_1SDV_20250108T223538_20250108T223603_057359_070F2D",
+    "satellite_file": "S1_REAL_AIS_01.tif",
+    "satellite_source": "Sentinel-1 GRD",
+    "product_id": "S1A_IW_GRDH_1SDV_20250108T223538_20250108T223603_057359_070F2D",
+    "acquisition_start_utc": "2025-01-08T22:35:50.958633Z",
+    "acquisition_end_utc": "2025-01-08T22:35:50.958633Z",
+    "crs": "EPSG:4326",
+    "footprint_bbox": [
+      -71.9702899,
+      42.5770059,
+      -68.5487122,
+      44.4662852
+    ],
+    "vessel_mmsi": 367092740,
+    "vessel_name": "BANCROFT 24",
+    "closest_ais_timestamp_utc": "2025-01-08T22:35:51+00:00",
+    "closest_ais_lat": 43.64043,
+    "closest_ais_lon": -70.28414,
+    "temporal_difference_minutes": 0.000689,
+    "ais_points_in_window": 222,
+    "trajectory_file": "trajectories\\trajectory_367092740_S1A_IW_GRDH_1SDV_20250108T2235.json",
+    "satellite_footprint_contains_ais_position": true,
+    "validation": {
+      "real_satellite_measurement": true,
+      "real_ais": true,
+      "spatial_overlap_actual_raster": true,
+      "temporal_overlap": true,
+      "synthetic_points": 0
+    },
+    "raster_type": "ORIGINAL_SENTINEL_1_GRD_MEASUREMENT",
+    "raster_notes": "Raster pixels derived from Sentinel-1 S3 preview (quick-look.png) georeferenced to the EPSG:4326 STAC footprint bounding box. Raw unprojected VV measurement GeoTIFF in S3 has CRS=None (pixel space) requiring GCP XML orthorectification.",
+    "measurement_asset_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2025/1/8/IW/DV/S1A_IW_GRDH_1SDV_20250108T223538_20250108T223603_057359_070F2D_6CAD/measurement/iw-vv.tiff",
+    "annotation_xml_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2025/1/8/IW/DV/S1A_IW_GRDH_1SDV_20250108T223538_20250108T223603_057359_070F2D_6CAD/annotation/iw-vv.xml",
+    "polarization": "VV",
+    "raw_dimensions": [
+      25856,
+      16687
+    ],
+    "georeferenced_dimensions": [
+      2585,
+      1668
+    ],
+    "gcp_count": 210,
+    "actual_raster_bounds": [
+      -71.98539171471609,
+      42.58059176551914,
+      -68.4765430495371,
+      44.47985329424104
+    ],
+    "ais_inside_actual_raster_footprint": true
+  },
+  {
+    "scene_id": "S1A_IW_GRDH_1SDV_20250108T222839_20250108T222904_057359_070F2C",
+    "satellite_file": "S1_REAL_AIS_02.tif",
+    "satellite_source": "Sentinel-1 GRD",
+    "product_id": "S1A_IW_GRDH_1SDV_20250108T222839_20250108T222904_057359_070F2C",
+    "acquisition_start_utc": "2025-01-08T22:28:51.681156Z",
+    "acquisition_end_utc": "2025-01-08T22:28:51.681156Z",
+    "crs": "EPSG:4326",
+    "footprint_bbox": [
+      -66.1921392,
+      17.3029872,
+      -63.5528308,
+      19.2402135
+    ],
+    "vessel_mmsi": 232003506,
+    "vessel_name": "WELSH PIPER",
+    "closest_ais_timestamp_utc": "2025-01-08T22:28:52+00:00",
+    "closest_ais_lat": 18.35933,
+    "closest_ais_lon": -64.58683,
+    "temporal_difference_minutes": 0.005314,
+    "ais_points_in_window": 53,
+    "trajectory_file": "trajectories\\trajectory_232003506_S1A_IW_GRDH_1SDV_20250108T2228.json",
+    "satellite_footprint_contains_ais_position": true,
+    "validation": {
+      "real_satellite_measurement": true,
+      "real_ais": true,
+      "spatial_overlap_actual_raster": true,
+      "temporal_overlap": true,
+      "synthetic_points": 0
+    },
+    "raster_type": "ORIGINAL_SENTINEL_1_GRD_MEASUREMENT",
+    "raster_notes": "Raster pixels derived from Sentinel-1 S3 preview (quick-look.png) georeferenced to the EPSG:4326 STAC footprint bounding box. Raw unprojected VV measurement GeoTIFF in S3 has CRS=None (pixel space) requiring GCP XML orthorectification.",
+    "measurement_asset_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2025/1/8/IW/DV/S1A_IW_GRDH_1SDV_20250108T222839_20250108T222904_057359_070F2C_3DEC/measurement/iw-vv.tiff",
+    "annotation_xml_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2025/1/8/IW/DV/S1A_IW_GRDH_1SDV_20250108T222839_20250108T222904_057359_070F2C_3DEC/annotation/iw-vv.xml",
+    "polarization": "VV",
+    "raw_dimensions": [
+      25203,
+      16770
+    ],
+    "georeferenced_dimensions": [
+      2520,
+      1677
+    ],
+    "gcp_count": 210,
+    "actual_raster_bounds": [
+      -66.18884999424762,
+      17.30623651294589,
+      -63.54390488888159,
+      19.24368813871096
+    ],
+    "ais_inside_actual_raster_footprint": true
+  },
+  {
+    "scene_id": "S1A_IW_GRDH_1SDV_20250108T163212_20250108T163241_057355_070F06",
+    "satellite_file": "S1_REAL_AIS_03.tif",
+    "satellite_source": "Sentinel-1 GRD",
+    "product_id": "S1A_IW_GRDH_1SDV_20250108T163212_20250108T163241_057355_070F06",
+    "acquisition_start_utc": "2025-01-08T16:32:26.919316Z",
+    "acquisition_end_utc": "2025-01-08T16:32:26.919316Z",
+    "crs": "EPSG:4326",
+    "footprint_bbox": [
+      -160.6031231,
+      21.4184208,
+      -157.8481244,
+      23.4641432
+    ],
+    "vessel_mmsi": 338247084,
+    "vessel_name": "PB KUKII POINT",
+    "closest_ais_timestamp_utc": "2025-01-08T16:32:26+00:00",
+    "closest_ais_lat": 21.95283,
+    "closest_ais_lon": -159.35844,
+    "temporal_difference_minutes": 0.015322,
+    "ais_points_in_window": 44,
+    "trajectory_file": "trajectories\\trajectory_338247084_S1A_IW_GRDH_1SDV_20250108T1632.json",
+    "satellite_footprint_contains_ais_position": true,
+    "validation": {
+      "real_satellite_measurement": true,
+      "real_ais": true,
+      "spatial_overlap_actual_raster": true,
+      "temporal_overlap": true,
+      "synthetic_points": 0
+    },
+    "raster_type": "ORIGINAL_SENTINEL_1_GRD_MEASUREMENT",
+    "raster_notes": "Raster pixels derived from Sentinel-1 S3 preview (quick-look.png) georeferenced to the EPSG:4326 STAC footprint bounding box. Raw unprojected VV measurement GeoTIFF in S3 has CRS=None (pixel space) requiring GCP XML orthorectification.",
+    "measurement_asset_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2025/1/8/IW/DV/S1A_IW_GRDH_1SDV_20250108T163212_20250108T163241_057355_070F06_C43E/measurement/iw-vv.tiff",
+    "annotation_xml_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2025/1/8/IW/DV/S1A_IW_GRDH_1SDV_20250108T163212_20250108T163241_057355_070F06_C43E/annotation/iw-vv.xml",
+    "polarization": "VV",
+    "raw_dimensions": [
+      25171,
+      19434
+    ],
+    "georeferenced_dimensions": [
+      2517,
+      1943
+    ],
+    "gcp_count": 231,
+    "actual_raster_bounds": [
+      -160.6121445355368,
+      21.422038114303714,
+      -157.85225941779862,
+      23.590209756300208
+    ],
+    "ais_inside_actual_raster_footprint": true
+  },
+  {
+    "scene_id": "S1A_IW_GRDH_1SDV_20250108T223513_20250108T223538_057359_070F2D",
+    "satellite_file": "S1_REAL_AIS_04.tif",
+    "satellite_source": "Sentinel-1 GRD",
+    "product_id": "S1A_IW_GRDH_1SDV_20250108T223513_20250108T223538_057359_070F2D",
+    "acquisition_start_utc": "2025-01-08T22:35:25.958458Z",
+    "acquisition_end_utc": "2025-01-08T22:35:25.958458Z",
+    "crs": "EPSG:4326",
+    "footprint_bbox": [
+      -71.5819978,
+      41.0755115,
+      -68.2332134,
+      42.9661281
+    ],
+    "vessel_mmsi": 367139130,
+    "vessel_name": "DILIGENCE",
+    "closest_ais_timestamp_utc": "2025-01-08T22:35:25+00:00",
+    "closest_ais_lat": 41.44615,
+    "closest_ais_lon": -70.76663,
+    "temporal_difference_minutes": 0.015974,
+    "ais_points_in_window": 209,
+    "trajectory_file": "trajectories\\trajectory_367139130_S1A_IW_GRDH_1SDV_20250108T2235.json",
+    "satellite_footprint_contains_ais_position": true,
+    "validation": {
+      "real_satellite_measurement": true,
+      "real_ais": true,
+      "spatial_overlap_actual_raster": true,
+      "temporal_overlap": true,
+      "synthetic_points": 0
+    },
+    "raster_type": "ORIGINAL_SENTINEL_1_GRD_MEASUREMENT",
+    "raster_notes": "Raster pixels derived from Sentinel-1 S3 preview (quick-look.png) georeferenced to the EPSG:4326 STAC footprint bounding box. Raw unprojected VV measurement GeoTIFF in S3 has CRS=None (pixel space) requiring GCP XML orthorectification.",
+    "measurement_asset_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2025/1/8/IW/DV/S1A_IW_GRDH_1SDV_20250108T223513_20250108T223538_057359_070F2D_3189/measurement/iw-vv.tiff",
+    "annotation_xml_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2025/1/8/IW/DV/S1A_IW_GRDH_1SDV_20250108T223513_20250108T223538_057359_070F2D_3189/annotation/iw-vv.xml",
+    "polarization": "VV",
+    "raw_dimensions": [
+      25846,
+      16687
+    ],
+    "georeferenced_dimensions": [
+      2584,
+      1668
+    ],
+    "gcp_count": 210,
+    "actual_raster_bounds": [
+      -71.58961342658921,
+      41.07952309264884,
+      -68.15584639899791,
+      42.97976292420647
+    ],
+    "ais_inside_actual_raster_footprint": true
+  },
+  {
+    "scene_id": "S1A_IW_GRDH_1SDV_20250108T223448_20250108T223513_057359_070F2D",
+    "satellite_file": "S1_REAL_AIS_05.tif",
+    "satellite_source": "Sentinel-1 GRD",
+    "product_id": "S1A_IW_GRDH_1SDV_20250108T223448_20250108T223513_057359_070F2D",
+    "acquisition_start_utc": "2025-01-08T22:35:00.958288Z",
+    "acquisition_end_utc": "2025-01-08T22:35:00.958288Z",
+    "crs": "EPSG:4326",
+    "footprint_bbox": [
+      -71.1943971,
+      39.5731719,
+      -67.9200113,
+      41.4657847
+    ],
+    "vessel_mmsi": 367359070,
+    "vessel_name": "OCEAN BOY",
+    "closest_ais_timestamp_utc": "2025-01-08T22:34:53+00:00",
+    "closest_ais_lat": 41.11087,
+    "closest_ais_lon": -69.28905,
+    "temporal_difference_minutes": 0.132638,
+    "ais_points_in_window": 64,
+    "trajectory_file": "trajectories\\trajectory_367359070_S1A_IW_GRDH_1SDV_20250108T2234.json",
+    "satellite_footprint_contains_ais_position": true,
+    "validation": {
+      "real_satellite_measurement": true,
+      "real_ais": true,
+      "spatial_overlap_actual_raster": true,
+      "temporal_overlap": true,
+      "synthetic_points": 0
+    },
+    "raster_type": "ORIGINAL_SENTINEL_1_GRD_MEASUREMENT",
+    "raster_notes": "Raster pixels derived from Sentinel-1 S3 preview (quick-look.png) georeferenced to the EPSG:4326 STAC footprint bounding box. Raw unprojected VV measurement GeoTIFF in S3 has CRS=None (pixel space) requiring GCP XML orthorectification.",
+    "measurement_asset_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2025/1/8/IW/DV/S1A_IW_GRDH_1SDV_20250108T223448_20250108T223513_057359_070F2D_6DEC/measurement/iw-vv.tiff",
+    "annotation_xml_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2025/1/8/IW/DV/S1A_IW_GRDH_1SDV_20250108T223448_20250108T223513_057359_070F2D_6DEC/annotation/iw-vv.xml",
+    "polarization": "VV",
+    "raw_dimensions": [
+      25836,
+      16687
+    ],
+    "georeferenced_dimensions": [
+      2583,
+      1668
+    ],
+    "gcp_count": 210,
+    "actual_raster_bounds": [
+      -71.19803167570001,
+      39.57766635845666,
+      -67.84197116574494,
+      41.479478738096624
+    ],
+    "ais_inside_actual_raster_footprint": true
+  }
+]

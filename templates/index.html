@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<!--
+    index.html - the single page of the AQUA SHIELD dashboard.
+
+    Served by backend/app.py at "/". It is a Jinja2 template: the backend fills in the
+    double-curly-brace placeholders (e.g. spill area) before sending the page.
+
+    Layout (everything floats over a full-screen map):
+      - header:        brand, navigation tabs, search box
+      - left drawer:   the 8 investigation steps (clicking one runs it - see app.js)
+      - right column:  4 cards - AI Assistant, Spill Overview, Vessel Analysis, Hindcast banner
+      - footer:        data source list, clock, Upload and New buttons
+      - modals:        report pop-up and upload pop-up (hidden until opened)
+
+    The id="..." attributes are how the JavaScript files find and update elements,
+    so an id must not be renamed here without also changing it in static/js.
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AQUA SHIELD - Ocean Intelligence System | SIH 2026</title>
+    
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <!-- Leaflet = the open-source map library. "integrity" is a hash the browser checks so a tampered file is refused. -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- AQUA SHIELD White-Tinted Glassmorphism CSS -->
+    <!-- "?v=12.0" is a version tag: changing it forces browsers to download the new file instead of a cached copy -->
+    <link rel="stylesheet" href="/static/css/aquashield-theme.css?v=12.0">
+</head>
+<body>
+    <div class="aquashield-container">
+        
+        <!-- Top Center White Notch (Match Reference Screenshot) -->
+        <div class="top-header-notch"></div>
+
+        <!-- ==========================================
+             FULLSCREEN SATELLITE MAP (BACKGROUND)
+             ========================================== -->
+        <!-- map.js creates the Leaflet map inside this empty div -->
+        <div id="map-viewport"></div>
+
+        <!-- ==========================================
+             TOP FLOATING HEADER BAR
+             ========================================== -->
+        <header class="aquashield-header">
+            <!-- Left Brand Capsule without Hamburger -->
+            <div class="brand-capsule-glass">
+                <div class="aquashield-emblem">
+                    <div class="emblem-ring"></div>
+                    <div class="emblem-core"></div>
+                </div>
+                <div class="brand-text">
+                    <div class="brand-title">AQUA SHIELD</div>
+                    <div class="brand-subtitle">OCEAN INTELLIGENCE</div>
+                </div>
+            </div>
+
+            <!-- Center Capsule Navigation (Active White Pill) -->
+            <!-- Tabs only change which one is highlighted (app.js bindNavCapsule); their data-step-id is not used.
+                 Reports opens the report; Data just shows a message. -->
+            <nav class="center-nav-capsule">
+                <button class="nav-capsule-item active" data-tab="investigate">
+                    <span class="nav-item-icon">🏠</span>
+                    <span>Investigate</span>
+                </button>
+                <button class="nav-capsule-item" data-tab="forecast" data-step-id="7">
+                    <span class="nav-item-icon">🌊</span>
+                    <span>Forecast</span>
+                </button>
+                <button class="nav-capsule-item" data-tab="vessels" data-step-id="5">
+                    <span class="nav-item-icon">🚢</span>
+                    <span>Vessels</span>
+                </button>
+                <button class="nav-capsule-item" data-tab="reports" onclick="window.aquaShieldApp.report.openReport()">
+                    <span class="nav-item-icon">📄</span>
+                    <span>Reports</span>
+                </button>
+                <button class="nav-capsule-item" data-tab="data" onclick="window.aquaShieldApp.showNotification('DATA: Sentinel-1, AIS, HYCOM, ECMWF verified.')">
+                    <span class="nav-item-icon">🗂️</span>
+                    <span>Data</span>
+                </button>
+            </nav>
+
+            <!-- Right Header Widgets -->
+            <div class="header-right-widgets">
+                <button class="weather-widget-btn" title="Gujarat Weather & MetOcean Telemetry" onclick="window.aquaShieldApp.showNotification('METOCEAN: HYCOM Surface Currents (1.42 kn SE) + ECMWF Wind (12.6 kn SW).')">☀️</button>
+                
+                <div class="search-bar-capsule">
+                    <span style="color: var(--text-muted); font-size: 13px;">🔍</span>
+                    <input type="text" placeholder="Search location, vessel, or case..." id="search-input-header">
+                </div>
+
+                <div class="user-avatar-circle" title="Operator Profile: AQUA SHIELD Investigator">A</div>
+            </div>
+        </header>
+
+
+
+        <!-- Floating Hamburger Icon Button (When Drawer is Closed) -->
+        <div class="hamburger-floating-pill" id="btn-open-drawer-pill" style="display: none;" title="Toggle Investigation Menu">
+            <span>☰</span>
+        </div>
+
+        <!-- ==========================================
+             FLOATING MAP CONTROLS & SCALE BAR
+             ========================================== -->
+        <div class="map-floating-controls">
+            <button class="map-control-glass-btn" id="btn-map-recenter" title="Recenter on Detected Slick">↗</button>
+            <button class="map-control-glass-btn" id="btn-map-zoom-in" title="Zoom In">+</button>
+            <button class="map-control-glass-btn" id="btn-map-zoom-out" title="Zoom Out">-</button>
+            <button class="map-control-glass-btn" id="btn-map-layers" title="Toggle SAR / Optical GIS Layers">🗂️</button>
+        </div>
+
+        <div class="map-scale-ruler">
+            <div style="border-bottom: 2px solid #ffffff; height: 3px; width: 70px; margin-bottom: 2px;"></div>
+            <span>0 &nbsp; 25 &nbsp; 50 &nbsp; 100 km</span>
+        </div>
+
+
+
+        <!-- ==========================================
+             MAIN FLOATING HUD WORKSPACE
+             ========================================== -->
+        <div class="floating-hud-workspace">
+            
+            <!-- LEFT FLOATING SIDEBAR: INVESTIGATION SLIDE-OUT DRAWER -->
+            <aside class="hud-sidebar-left" id="investigation-drawer">
+                <div class="sidebar-panel-header">
+                    <div class="sidebar-title-group">
+                        <div class="teal-indicator-bar"></div>
+                        <span class="sidebar-title">Investigation</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="sidebar-badge-count">8</span>
+                        <span id="btn-close-sidebar" style="cursor: pointer; font-size: 13px; color: #ffffff; padding: 2px 5px; background: rgba(255,255,255,0.1); border-radius: 50%;" title="Close Menu">✕</span>
+                    </div>
+                </div>
+
+                <!-- The 8 pipeline steps. data-step-id tells app.js which step was clicked.
+                     The completed / active classes set here are only the starting look;
+                     app.js updates them as steps run. -->
+                <div class="investigation-timeline-list">
+                    <div class="timeline-connector-wire"></div>
+
+                    <!-- Step 1: Evidence -->
+                    <div class="timeline-step-row completed" data-step-id="1">
+                        <div class="step-circle-num">1</div>
+                        <div class="step-glass-box">
+                            <div class="step-icon-badge">
+                                <span class="step-icon-glyph">📄</span>
+                            </div>
+                            <span class="step-name-text">Evidence</span>
+                            <span class="step-status-badge status-completed">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Spill Detection -->
+                    <div class="timeline-step-row completed" data-step-id="2">
+                        <div class="step-circle-num">2</div>
+                        <div class="step-glass-box">
+                            <div class="step-icon-badge">
+                                <span class="step-icon-glyph">💧</span>
+                            </div>
+                            <span class="step-name-text">Spill Detection</span>
+                            <span class="step-status-badge status-completed">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Characterization -->
+                    <div class="timeline-step-row completed" data-step-id="3">
+                        <div class="step-circle-num">3</div>
+                        <div class="step-glass-box">
+                            <div class="step-icon-badge">
+                                <span class="step-icon-glyph">🥞</span>
+                            </div>
+                            <span class="step-name-text">Characterization</span>
+                            <span class="step-status-badge status-completed">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Rewind -->
+                    <div class="timeline-step-row completed" data-step-id="4">
+                        <div class="step-circle-num">4</div>
+                        <div class="step-glass-box">
+                            <div class="step-icon-badge">
+                                <span class="step-icon-glyph">↺</span>
+                            </div>
+                            <span class="step-name-text">Rewind</span>
+                            <span class="step-status-badge status-completed">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Step 5: Vessel Analysis (Active) -->
+                    <div class="timeline-step-row active" data-step-id="5">
+                        <div class="step-circle-num">5</div>
+                        <div class="step-glass-box">
+                            <div class="step-icon-badge">
+                                <span class="step-icon-glyph">🚢</span>
+                            </div>
+                            <span class="step-name-text">Vessel Analysis</span>
+                            <span class="step-status-badge status-active">
+                                <div class="spinner-ring"></div>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Step 6: Correlation -->
+                    <div class="timeline-step-row" data-step-id="6">
+                        <div class="step-circle-num">6</div>
+                        <div class="step-glass-box">
+                            <div class="step-icon-badge">
+                                <span class="step-icon-glyph">🔍</span>
+                            </div>
+                            <span class="step-name-text">Correlation</span>
+                            <span class="step-status-badge status-pending"></span>
+                        </div>
+                    </div>
+
+                    <!-- Step 7: Forecast -->
+                    <div class="timeline-step-row" data-step-id="7">
+                        <div class="step-circle-num">7</div>
+                        <div class="step-glass-box">
+                            <div class="step-icon-badge">
+                                <span class="step-icon-glyph">🌊</span>
+                            </div>
+                            <span class="step-name-text">Forecast</span>
+                            <span class="step-status-badge status-pending"></span>
+                        </div>
+                    </div>
+
+                    <!-- Step 8: Report -->
+                    <div class="timeline-step-row" data-step-id="8">
+                        <div class="step-circle-num">8</div>
+                        <div class="step-glass-box">
+                            <div class="step-icon-badge">
+                                <span class="step-icon-glyph">📋</span>
+                            </div>
+                            <span class="step-name-text">Report</span>
+                            <span class="step-status-badge status-pending"></span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- RIGHT FLOATING SIDEBAR: 4 COMPACT GLASS CARDS (NO SCROLLING NEEDED) -->
+            <aside class="hud-sidebar-right">
+                
+                <!-- Card 1: AI Assistant (Compact) -->
+                <div class="glass-hud-card">
+                    <div class="card-header-bar">
+                        <span class="card-title-text">
+                            <span style="color: var(--accent-cyan);">📊</span>
+                            <span>AI Assistant</span>
+                        </span>
+                        <span class="card-badge-pill badge-voice" id="btn-voice-toggle-menu">🎙️ Voice ▾</span>
+                    </div>
+
+                    <!-- The animated orb is the microphone button (voice.js); the transcript text below it shows what was heard / answered -->
+                    <div class="ai-voice-hero-row">
+                        <div class="apple-intelligence-orb" id="btn-voice-mic" title="Click to Speak to AQUA SHIELD AI">
+                            <div class="siri-hemisphere-base"></div>
+                            <div class="siri-wave-layer wave-cyan-blue"></div>
+                            <div class="siri-wave-layer wave-purple-pink"></div>
+                            <div class="siri-wave-layer wave-magenta-glow"></div>
+                            <div class="siri-hemisphere-specular"></div>
+                        </div>
+                        <div class="ai-status-copy">
+                            <span class="ai-status-headline" id="voice-transcript-text">Listening...</span>
+                            <span class="ai-status-subtext">Ask about the spill, vessels, or generate a report.</span>
+                        </div>
+                        <div class="mic-circle-trigger" onclick="window.aquaShieldApp.voice.toggleListening()" title="Toggle Mic">🎙️</div>
+                    </div>
+
+                    <!-- Quick commands: clicking sends the data-query text to /api/voice_command (voice.js).
+                         NOTE: because of the keyword order in backend/voice_assistant.py, "...suspicious vessel?"
+                         is routed to nearby-vessels and "...spill forecast" to spill analysis. -->
+                    <div class="voice-chips-grid">
+                        <button class="voice-command-pill" data-query="Rewind 6 hours to probable origin">
+                            <span>⏪</span>
+                            <span>Rewind origin</span>
+                        </button>
+                        <button class="voice-command-pill" data-query="Who is the most suspicious vessel?">
+                            <span>🔍</span>
+                            <span>Who is the culprit?</span>
+                        </button>
+                        <button class="voice-command-pill" data-query="Show 24-hour spill forecast">
+                            <span>📈</span>
+                            <span>24h forecast</span>
+                        </button>
+                        <button class="voice-command-pill" data-query="Generate investigation report">
+                            <span>📋</span>
+                            <span>Generate report</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card 2: Spill Overview (Compact) -->
+                <div class="glass-hud-card" onclick="window.aquaShieldApp.report.openReport()" style="cursor: pointer;">
+                    <div class="card-header-bar">
+                        <span class="card-title-text">
+                            <span style="color: var(--accent-crimson);">🔴</span>
+                            <span>Spill Overview</span>
+                        </span>
+                        <span class="card-badge-pill badge-alert">ALERT</span>
+                    </div>
+
+                    <!-- Spill Area and Mean Probability are first filled by Jinja (if/else blocks), then
+                         updated by app.js after an upload. Classification and Slick Age are fixed text. -->
+                    <div class="spill-stats-2x2">
+                        <div class="metric-stat-box">
+                            <div class="metric-top-row">
+                                <span style="font-size: 11px; color: var(--accent-cyan); margin-right: 3px;">⛶</span>
+                                <span class="metric-number crimson" id="hud-spill-area-val">{% if spill_area > 0 %}{{ spill_area }} km²{% else %}0.0 km²{% endif %}</span>
+                            </div>
+                            <span class="metric-label-muted">Spill Area</span>
+                        </div>
+
+                        <div class="metric-stat-box">
+                            <div class="metric-top-row">
+                                <span style="font-size: 11px; color: var(--accent-cyan); margin-right: 3px;">📊</span>
+                                <span class="metric-number emerald" id="hud-mean-prob-val">{% if spill_area > 0 %}{{ mean_probability }}{% else %}0.0%{% endif %}</span>
+                            </div>
+                            <span class="metric-label-muted">Mean Probability</span>
+                        </div>
+
+                        <div class="metric-stat-box">
+                            <div class="metric-top-row">
+                                <span style="font-size: 11px; color: var(--accent-cyan); margin-right: 3px;">🗂️</span>
+                                <span class="metric-number" style="font-size: 11px;">Unclassified</span>
+                            </div>
+                            <span class="metric-label-muted">(SAR Dark Spot)</span>
+                        </div>
+
+                        <div class="metric-stat-box">
+                            <div class="metric-top-row">
+                                <span style="font-size: 11px; color: var(--accent-amber); margin-right: 3px;">⏱️</span>
+                                <span class="metric-number amber" style="font-size: 11px;">Not Available</span>
+                            </div>
+                            <span class="metric-label-muted">Slick Age</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Vessel Analysis (Compact Operational Summary) -->
+                <div class="glass-hud-card" style="cursor: pointer;">
+                    <div class="card-header-bar">
+                        <span class="card-title-text">
+                            <span style="color: var(--accent-blue);">🚢</span>
+                            <span>Vessel Analysis</span>
+                        </span>
+                        <span class="card-badge-pill badge-verified">LIVE PELYR</span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px; padding: 2px 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                            <span style="color: var(--text-muted);">NEAR-SPILL AIS:</span>
+                            <b style="color: #ff3b30;" id="near-spill-count-val">0 vessels</b>
+                        </div>
+                        <!-- "34 active" is placeholder text until loadVessels() in map.js fills in the real count -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                            <span style="color: var(--text-muted);">REGIONAL AIS:</span>
+                            <b style="color: #00d2ff;" id="regional-vessel-count-val">34 active</b>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 4px;">
+                            <span style="color: var(--text-muted);">HISTORICAL CORRELATION:</span>
+                            <span id="historical-corr-status-val"><b style="color: #ff9f0a;">NO VERIFIED HISTORICAL SOURCE</b></span>
+                        </div>
+
+                        <!-- REAL PELYR VESSEL ANALYSIS CONTAINER -->
+                        <!-- Hidden (display: none) until step 5/6 runs or a ship is clicked; filled by app.js -->
+                        <!-- event.stopPropagation() in the onclick handlers stops the click also triggering the card behind it -->
+
+                        <div style="border-top: 1px solid rgba(255,255,255,0.15); margin-top: 3px; padding-top: 4px;">
+                            <div id="pelyr-vessel-info-box" style="display: none; font-size: 11px; color: #cde0f5; background: rgba(0,210,255,0.06); border: 1px solid rgba(0,210,255,0.25); border-radius: 8px; padding: 6px 8px; margin-top: 3px;">
+                                <div style="font-size: 11px; font-weight: 800; color: #00d2ff; letter-spacing: 0.5px; margin-bottom: 3px;" id="pelyr-card-header">LEADING SOURCE CANDIDATE</div>
+                                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                                    <b style="font-size: 14px; color: #ffffff;" id="pelyr-vessel-name">SELECT VESSEL</b>
+                                    <span style="font-size: 11px; font-family: var(--font-mono); color: #8ca3bf;" id="pelyr-mmsi">MMSI: -</span>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px; margin-bottom: 5px;">
+                                    <div>
+                                        <div style="font-size: 10px; color: var(--text-muted);">DIST TO ORIGIN</div>
+                                        <b style="font-size: 12px; color: #30d158;" id="pelyr-spill-dist">-</b>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 10px; color: var(--text-muted);">SPEED / COURSE</div>
+                                        <b style="font-size: 12px; color: #00d2ff;" id="pelyr-sog-cog">-</b>
+                                    </div>
+                                    <div style="grid-column: span 2;">
+                                        <div style="font-size: 10px; color: var(--text-muted);">HISTORICAL TRACK</div>
+                                        <b style="font-size: 11px; color: #ff9f0a;" id="pelyr-track-count">-</b>
+                                    </div>
+                                    <div style="grid-column: span 2;">
+                                        <div style="font-size: 10px; color: var(--text-muted);">TEMPORAL Δ</div>
+                                        <b style="font-size: 11px; color: #ff9f0a;" id="pelyr-temp-corr">N/A</b>
+                                    </div>
+                                </div>
+                                <div style="font-size: 8.5px; color: #8ca3bf; font-style: italic; margin-bottom: 4px;">CANDIDATE EVIDENCE ONLY</div>
+                                
+                                <div id="pelyr-ranking-container" style="display: none; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 4px; margin-bottom: 4px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                                        <div style="font-size: 11px; font-weight: 700; color: #8ca3bf;">TOP CANDIDATES</div>
+                                        <span style="font-size: 9.5px; color: #00d2ff; cursor: pointer;" onclick="event.stopPropagation(); window.aquaShieldApp.toggleAllCandidates();">VIEW ALL</span>
+                                    </div>
+                                    <div id="pelyr-ranking-list" style="display: flex; flex-direction: column; gap: 3px;">
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; gap: 4px;">
+                                    <button id="btn-clear-pelyr-track" onclick="event.stopPropagation(); window.aquaShieldApp.clearPelyrTrack();" style="flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ffffff; font-size: 10px; font-weight: 600; padding: 4px 6px; border-radius: 5px; cursor: pointer;">
+                                        DESELECT VESSEL
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Hindcast & Forecast Banner (Compact) -->
+                <div class="glass-hud-card hindcast-banner-card" onclick="window.aquaShieldApp.activatePipelineStep(4)">
+                    <div class="banner-left-copy">
+                        <div class="banner-title">
+                            <span style="color: var(--accent-cyan);">🌊</span>
+                            <span>Hindcast & Forecast</span>
+                        </div>
+                        <span class="banner-sub">Rewind to possible origin or simulate future drift.</span>
+                    </div>
+                    <span class="chevron-arrow">›</span>
+                </div>
+
+            </aside>
+        </div>
+
+        <!-- ==========================================
+             BOTTOM FLOATING GLASS TELEMETRY FOOTER
+             ========================================== -->
+        <footer class="aquashield-bottom-bar">
+            <!-- Data source labels are fixed text; the green dots are decorative, not live status checks -->
+            <div class="footer-sources-left">
+                <span style="color: #ffffff; font-weight: 700;">Data Sources:</span>
+                <div class="source-dot-item">
+                    <span class="source-dot-green"></span>
+                    <span>Sentinel-1</span>
+                </div>
+                <div class="source-dot-item">
+                    <span class="source-dot-green"></span>
+                    <span>AIS: 5.9M Points</span>
+                </div>
+                <div class="source-dot-item">
+                    <span class="source-dot-green"></span>
+                    <span>Ocean: COPERNICUS / HYCOM (TEST_OCEAN_001.nc)</span>
+                </div>
+                <div class="source-dot-item">
+                    <span class="source-dot-green"></span>
+                    <span>Weather: ECMWF</span>
+                </div>
+                <div class="source-dot-item">
+                    <span class="source-dot-green"></span>
+                    <span>Ports: Gujarat / Arabian Sea</span>
+                </div>
+                <div class="source-dot-item">
+                    <span class="source-dot-green"></span>
+                    <span>Map: OSM GIS</span>
+                </div>
+            </div>
+
+            <div class="footer-actions-right">
+                <div class="live-badge-pill">
+                    <span class="source-dot-green"></span>
+                    <span>Live</span>
+                </div>
+                <!-- Clock, updated every second by app.js startLiveClock() -->
+                <span class="footer-time-stamp" id="footer-time-stamp-val">-- --- ----, --:-- IST</span>
+
+                <!-- Upload opens the upload modal; New starts a fresh investigation -->
+                <button class="footer-action-glass-btn primary" id="btn-open-upload">
+                    <span>☁️</span>
+                    <span>Upload</span>
+                </button>
+                <button class="footer-action-glass-btn" onclick="window.aquaShieldApp && window.aquaShieldApp.startNewInvestigation()">
+                    <span>+</span>
+                    <span>New</span>
+                </button>
+            </div>
+        </footer>
+
+        <!-- Toast Notifications HUD -->
+        <!-- Invisible (opacity 0) until app.js showNotification() fades it in for 4 seconds -->
+        <div id="tactical-toast" style="position: fixed; top: 76px; right: 360px; background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.4); color: #ffffff; padding: 8px 16px; border-radius: 12px; font-family: var(--font-sans); font-size: 11.5px; font-weight: 600; box-shadow: 0 12px 30px rgba(0,0,0,0.4); z-index: 1000; opacity: 0; transform: translateY(10px); transition: all 0.3s ease; pointer-events: none;"></div>
+
+        <!-- ==========================================
+             MODALS: REPORT DOSSIER & EVIDENCE UPLOAD
+             ========================================== -->
+        <!-- Forensic Report Dossier Modal -->
+        <!-- Modals are hidden by CSS until JS adds the class "open".
+             NOTE: case_id in the title is not passed by app.py, so it renders empty. -->
+        <div class="tactical-modal-backdrop" id="report-modal">
+            <div class="tactical-modal-dialog">
+                <div class="modal-header">
+                    <div class="modal-title">MARITIME FORENSIC DOSSIER • CASE {{ case_id }}</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="footer-action-glass-btn primary" id="btn-print-report">🖨️ PRINT / PDF</button>
+                        <button class="modal-close-btn" id="btn-close-report">✕</button>
+                    </div>
+                </div>
+                <div class="modal-body" id="report-modal-body">
+                    <!-- Injected by report.js -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Evidence File Upload Modal -->
+        <div class="tactical-modal-backdrop" id="upload-modal">
+            <div class="tactical-modal-dialog" style="max-width: 500px;">
+                <div class="modal-header">
+                    <div class="modal-title">INGEST NEW EVIDENCE</div>
+                    <button class="modal-close-btn" id="btn-close-upload">✕</button>
+                </div>
+                <div class="modal-body">
+                    <!-- On submit, app.js sends only the chosen file to /api/upload_evidence.
+                         The "Evidence type" dropdown is not sent; every file is treated as a SAR image. -->
+                    <form id="upload-evidence-form" style="display: flex; flex-direction: column; gap: 14px;">
+                        <div>
+                            <label style="font-family: var(--font-sans); font-size: 11px; font-weight: 600; color: var(--accent-cyan); display: block; margin-bottom: 6px;">EVIDENCE TYPE:</label>
+                            <select id="upload-type-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #ffffff; padding: 9px; font-family: var(--font-sans); font-size: 12px; border-radius: 10px;">
+                                <option value="sar_satellite">Satellite Imagery (Sentinel-1 / RADARSAT-2)</option>
+                                <option value="ais_telemetry">AIS Dataset (CSV / NMEA 0183)</option>
+                                <option value="ocean_currents">Ocean Data (HYCOM / INCOIS NetCDF)</option>
+                                <option value="weather_wind">Weather Data (ECMWF / NOAA GRIB)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-family: var(--font-sans); font-size: 11px; font-weight: 600; color: var(--accent-cyan); display: block; margin-bottom: 6px;">SELECT DATA FILE:</label>
+                            <input type="file" id="upload-file-input" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #ffffff; padding: 9px; font-family: var(--font-sans); font-size: 11px; border-radius: 10px;">
+                        </div>
+                        <button type="submit" class="footer-action-glass-btn primary" style="margin-top: 10px; justify-content: center; width: 100%; padding: 9px;">
+                            INGEST & RUN INVESTIGATION
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Application Scripts -->
+    <!-- Order matters: app.js must load last because it uses the classes defined by the other four files -->
+    <script src="/static/js/map.js?v=12.0"></script>
+    <script src="/static/js/timeline.js?v=12.0"></script>
+    <script src="/static/js/voice.js?v=13.0"></script>
+    <script src="/static/js/report.js?v=13.0"></script>
+    <script src="/static/js/app.js?v=14.0"></script>
+</body>
+</html>

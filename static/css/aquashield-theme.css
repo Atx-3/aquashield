@@ -1,0 +1,1214 @@
+/* ==========================================================================
+   AQUA SHIELD: OCEAN INTELLIGENCE SYSTEM - WHITE-TINTED SATELLITE GLASSMORPHISM
+   Smart India Hackathon (SIH) High-Fidelity Photorealistic Console
+   ==========================================================================
+
+   HOW THIS STYLESHEET WORKS
+   - :root holds CSS variables (--name: value). Elsewhere, var(--name) reuses them,
+     so changing one colour here changes it across the whole app.
+   - "Glassmorphism" look = semi-transparent background (rgba with alpha < 1)
+     + backdrop-filter: blur(...), which blurs whatever is behind the panel
+     (here, the satellite map), plus a thin light border and soft shadow.
+   - Layout: the map fills the screen (z-index 1); header, side panels, footer and
+     modals float above it with position: absolute/fixed and higher z-index values.
+   - pointer-events: none lets clicks pass through empty areas to the map;
+     pointer-events: all turns clicking back on for the actual panels.
+   - @keyframes define animations (spin, pulse, waves) used by the "animation" property.
+   - JS toggles state classes such as .active, .completed, .open, .drawer-closed,
+     .listening - search for those names to see how each state looks.
+   ========================================================================== */
+
+/* Design tokens: colours, shadows, fonts and blur strength shared by the whole UI */
+:root {
+  /* Luminous Grey-Tinted Frosted Glassmorphism Theme */
+  --bg-app: #030a14;
+  --bg-glass-panel: rgba(20, 26, 38, 0.55);
+  --bg-glass-panel-solid: rgba(26, 34, 50, 0.70);
+  --bg-glass-card: rgba(20, 26, 38, 0.45);
+  --bg-glass-card-hover: rgba(30, 40, 58, 0.65);
+  --bg-glass-subtle: rgba(16, 22, 32, 0.40);
+
+  --border-glass: rgba(255, 255, 255, 0.18);
+  --border-glass-bright: rgba(255, 255, 255, 0.32);
+  --border-subtle: rgba(255, 255, 255, 0.10);
+  --border-active: rgba(0, 195, 255, 0.7);
+
+  --shadow-glass: 0 14px 36px 0 rgba(0, 0, 0, 0.35);
+  --shadow-glass-lg: 0 20px 50px 0 rgba(0, 0, 0, 0.45);
+  --shadow-inner-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.35);
+
+  --text-primary: #ffffff;
+  --text-secondary: #cde0f5;
+  --text-muted: #8ca3bf;
+
+  --accent-cyan: #00d2ff;
+  --accent-blue: #0084ff;
+  --accent-crimson: #ff3b30;
+  --accent-amber: #ff9f0a;
+  --accent-emerald: #30d158;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", "Consolas", monospace;
+  --blur-val: blur(26px) saturate(190%);
+}
+
+/* Reset: remove browser default spacing; box-sizing border-box makes width include padding + border */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Full-window app with no page scrolling (100vh/100vw = 100% of the viewport height/width) */
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+/* App Fullscreen Container */
+.aquashield-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+  background: #040e1e;
+  overflow: hidden;
+}
+
+/* Background Satellite Map Layer */
+#map-viewport {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  background: #051428;
+}
+
+/* ==========================================================================
+   TOP FLOATING HEADER BAR & NOTCH (MATCH SCREENSHOT EXACTLY)
+   ========================================================================== */
+.top-header-notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.35);
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  z-index: 60;
+  backdrop-filter: blur(10px);
+}
+
+.aquashield-header {
+  position: absolute;
+  top: 10px;
+  left: 16px;
+  right: 16px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* Left Brand Capsule with Hamburger */
+.brand-capsule-glass {
+  pointer-events: all;
+  height: 46px;
+  background: var(--bg-glass-panel);
+  border: 1px solid var(--border-glass);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px 0 8px;
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: var(--blur-val);
+  -webkit-backdrop-filter: var(--blur-val);
+}
+
+.hamburger-menu-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hamburger-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.08);
+}
+
+.hamburger-floating-pill {
+  position: absolute;
+  top: 76px;
+  left: 16px;
+  width: 38px;
+  height: 38px;
+  background: var(--bg-glass-panel);
+  border: 1px solid var(--border-glass);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 25;
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: var(--blur-val);
+  -webkit-backdrop-filter: var(--blur-val);
+  transition: all 0.25s ease;
+}
+
+.hamburger-floating-pill:hover {
+  background: var(--bg-glass-panel-solid);
+  transform: translateY(-1px);
+}
+
+.aquashield-emblem {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, #00d2ff 0%, #0066cc 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 14px rgba(0, 210, 255, 0.6);
+  overflow: hidden;
+}
+
+.emblem-ring {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: emblem-spin 6s linear infinite;
+}
+
+.emblem-core {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #ffffff;
+}
+
+/* One full turn; used for the logo ring, the origin marker and loading spinners */
+@keyframes emblem-spin {
+  100% { transform: rotate(360deg); }
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.brand-subtitle {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+/* Center Segmented Nav Capsule */
+.center-nav-capsule {
+  pointer-events: all;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  background: var(--bg-glass-panel);
+  border: 1px solid var(--border-glass);
+  padding: 4px;
+  border-radius: 24px;
+  gap: 3px;
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: var(--blur-val);
+  -webkit-backdrop-filter: var(--blur-val);
+}
+
+.nav-capsule-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-capsule-item:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.nav-capsule-item.active {
+  background: #ffffff;
+  color: #0b1a30;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.nav-item-icon {
+  font-size: 13px;
+}
+
+/* Right Header Widgets */
+.header-right-widgets {
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.weather-widget-btn {
+  background: var(--bg-glass-panel);
+  border: 1px solid var(--border-glass);
+  color: #ffffff;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: var(--blur-val);
+  -webkit-backdrop-filter: var(--blur-val);
+  transition: all 0.2s ease;
+}
+
+.weather-widget-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.search-bar-capsule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  background: var(--bg-glass-panel);
+  border: 1px solid var(--border-glass);
+  padding: 0 14px;
+  border-radius: 24px;
+  width: 250px;
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: var(--blur-val);
+  -webkit-backdrop-filter: var(--blur-val);
+}
+
+.search-bar-capsule input {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 12px;
+  width: 100%;
+  outline: none;
+}
+
+.search-bar-capsule input::placeholder {
+  color: var(--text-muted);
+}
+
+.user-avatar-circle {
+  width: 42px;
+  height: 42px;
+  background: #0071e3;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0, 113, 227, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   FLOATING HUD WORKSPACE (LEFT SLIDE-OUT DRAWER & RIGHT PANELS OVER MAP)
+   ========================================================================== */
+.floating-hud-workspace {
+  position: absolute;
+  top: 72px;
+  left: 16px;
+  right: 16px;
+  bottom: 56px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* Left Floating Sidebar: Slide-out Drawer */
+.hud-sidebar-left {
+  width: 230px;
+  background: var(--bg-glass-panel);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--shadow-glass-lg);
+  backdrop-filter: var(--blur-val);
+  -webkit-backdrop-filter: var(--blur-val);
+  pointer-events: all;
+  height: fit-content;
+  max-height: fit-content;
+  transform: translateX(0);
+  opacity: 1;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Added by app.js to hide the drawer: slide it off-screen to the left and fade it out
+   (the "transition" on the rule above animates the change) */
+.hud-sidebar-left.drawer-closed {
+  transform: translateX(-120%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sidebar-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.teal-indicator-bar {
+  width: 3.5px;
+  height: 15px;
+  background: var(--accent-cyan);
+  border-radius: 4px;
+  box-shadow: 0 0 8px var(--accent-cyan);
+}
+
+.sidebar-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+.sidebar-badge-count {
+  font-size: 10.5px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  padding: 1px 7px;
+  border-radius: 12px;
+}
+
+/* 8-Step Timeline Pipeline (Refactored Glass Box UI) */
+.investigation-timeline-list {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  gap: 4px;
+  padding: 2px 0;
+  width: 100%;
+}
+
+.timeline-connector-wire {
+  position: absolute;
+  left: 11px;
+  top: 14px;
+  bottom: 14px;
+  width: 1.5px;
+  border-left: 1.5px dashed rgba(255, 255, 255, 0.3);
+  z-index: 1;
+}
+
+.timeline-step-row {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.timeline-step-row:hover {
+  transform: translateX(3px);
+}
+
+.step-circle-num {
+  width: 22px;
+  height: 22px;
+  background: rgba(35, 60, 85, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 2;
+  transition: all 0.25s ease;
+}
+
+/* Completed Step Circle (Teal) */
+.timeline-step-row.completed .step-circle-num {
+  background: #2b837e;
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+}
+
+/* Active Step Circle (Glowing Cyan/Blue) */
+.timeline-step-row.active .step-circle-num {
+  background: #0084ff;
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  box-shadow: 0 0 12px #0084ff, 0 0 6px #ffffff;
+}
+
+/* Individual Glass Box Button for Each Step */
+.step-glass-box {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: rgba(18, 42, 66, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.timeline-step-row:hover .step-glass-box {
+  background: rgba(24, 55, 88, 0.75);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Active Glass Box State */
+.timeline-step-row.active .step-glass-box {
+  background: rgba(0, 110, 220, 0.32);
+  border: 1.5px solid rgba(0, 180, 255, 0.85);
+  box-shadow: 0 0 18px rgba(0, 140, 255, 0.45), inset 0 0 10px rgba(0, 180, 255, 0.2);
+}
+
+.step-icon-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+}
+
+.timeline-step-row.active .step-icon-badge {
+  background: rgba(0, 140, 255, 0.3);
+  border-color: rgba(0, 200, 255, 0.9);
+  color: #00d9ff;
+  box-shadow: 0 0 10px rgba(0, 180, 255, 0.5);
+}
+
+.step-name-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #e2f1ff;
+  letter-spacing: 0.2px;
+  flex: 1;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+/* Status Badges */
+.step-status-badge {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-status-badge.status-completed {
+  background: rgba(43, 131, 126, 0.35);
+  border: 1px solid #2b837e;
+  color: #3cdbba;
+}
+
+.step-status-badge.status-active {
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner-ring {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #00d9ff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: emblem-spin 1.2s linear infinite;
+  box-shadow: 0 0 6px #00d9ff;
+}
+
+.step-status-badge.status-pending {
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+}
+
+/* ==========================================================================
+   RIGHT FLOATING SIDEBAR: 4 COMPACT GLASS CARDS (NO SCROLLING NEEDED)
+   ========================================================================== */
+.hud-sidebar-right {
+  width: 275px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: all;
+  height: fit-content;
+  max-height: calc(100vh - 140px);
+}
+
+/* Compact Glass Card Styling */
+.glass-hud-card {
+  background: var(--bg-glass-panel);
+  border: 1px solid var(--border-glass);
+  border-radius: 14px;
+  padding: 8px 10px;
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: var(--blur-val);
+  -webkit-backdrop-filter: var(--blur-val);
+  transition: all 0.25s ease;
+}
+
+.glass-hud-card:hover {
+  background: var(--bg-glass-panel-solid);
+  border-color: var(--border-glass-bright);
+}
+
+.card-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.card-title-text {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.card-badge-pill {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  letter-spacing: 0.4px;
+}
+
+.badge-alert {
+  background: var(--accent-crimson);
+  color: #ffffff;
+}
+
+.badge-verified {
+  background: rgba(255, 159, 10, 0.25);
+  color: var(--accent-amber);
+  border: 1px solid rgba(255, 159, 10, 0.5);
+}
+
+.badge-voice {
+  background: rgba(48, 209, 88, 0.18);
+  color: var(--accent-emerald);
+  border: 1px solid rgba(48, 209, 88, 0.4);
+  cursor: pointer;
+}
+
+/* Card 1: AI Voice Assistant (Compact) */
+.ai-voice-hero-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.apple-intelligence-orb {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 40% 30%, #061e38 0%, #220d3f 50%, #3d0c36 85%, #050d1a 100%);
+  box-shadow: 0 0 18px rgba(123, 44, 191, 0.55), 0 0 10px rgba(0, 210, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+.apple-intelligence-orb:hover {
+  transform: scale(1.14);
+  box-shadow: 0 0 30px rgba(236, 72, 153, 0.85), 0 0 20px rgba(0, 210, 255, 0.75);
+}
+
+/* 3D Balanced Mid-Tone Gradient Base & Highlight */
+.siri-hemisphere-base {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 35% 25%, rgba(0, 160, 230, 0.8) 0%, rgba(90, 25, 140, 0.85) 45%, rgba(160, 30, 120, 0.75) 85%, rgba(6, 15, 32, 0.9) 100%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.siri-hemisphere-specular {
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  width: 22px;
+  height: 11px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.45) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* Half-Hemisphere Fluid Wave Layers (Balanced Medium Phase -> Vibrant Wave Surge) */
+.siri-wave-layer {
+  position: absolute;
+  width: 140%;
+  height: 70%;
+  bottom: -5%;
+  left: -20%;
+  border-radius: 45% 55% 60% 40% / 50% 50% 50% 50%;
+  filter: blur(2.5px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.wave-cyan-blue {
+  background: linear-gradient(135deg, rgba(0, 200, 255, 0.9) 0%, rgba(0, 120, 230, 0.8) 50%, rgba(110, 30, 170, 0.6) 100%);
+  animation: balanced-wave-1 5s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+  opacity: 0.8;
+  z-index: 2;
+}
+
+.wave-purple-pink {
+  background: linear-gradient(135deg, rgba(110, 30, 170, 0.9) 0%, rgba(170, 30, 180, 0.8) 50%, rgba(230, 60, 160, 0.75) 100%);
+  animation: balanced-wave-2 6s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+  opacity: 0.85;
+  z-index: 3;
+}
+
+.wave-magenta-glow {
+  background: radial-gradient(ellipse at 50% 0%, rgba(236, 72, 153, 0.95) 0%, rgba(210, 40, 130, 0.7) 50%, transparent 100%);
+  animation: balanced-wave-3 4s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+  opacity: 0.75;
+  z-index: 4;
+}
+
+/* Keyframes Spending ~60% in Mid-Dark Tone and ~40% in Luminous Wave Arc */
+@keyframes balanced-wave-1 {
+  0%, 55% { transform: translateY(8%) scaleY(0.9) rotate(-3deg); opacity: 0.6; }
+  100% { transform: translateY(-28%) scaleY(1.25) rotate(5deg); opacity: 0.95; }
+}
+
+@keyframes balanced-wave-2 {
+  0%, 50% { transform: translateY(12%) scaleY(0.85) rotate(4deg); opacity: 0.55; }
+  100% { transform: translateY(-32%) scaleY(1.3) rotate(-5deg); opacity: 0.95; }
+}
+
+@keyframes balanced-wave-3 {
+  0%, 52% { transform: translateY(5%) scaleX(0.85); opacity: 0.5; }
+  100% { transform: translateY(-38%) scaleX(1.2); opacity: 0.9; }
+}
+
+.ai-status-copy {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.ai-status-headline {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.ai-status-subtext {
+  font-size: 9.5px;
+  color: var(--text-secondary);
+  line-height: 1.25;
+}
+
+.mic-circle-trigger {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.mic-circle-trigger:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+/* 2x2 Quick Action Chips */
+.voice-chips-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.voice-command-pill {
+  background: var(--bg-glass-subtle);
+  border: 1px solid var(--border-subtle);
+  color: #ffffff;
+  padding: 5px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.voice-command-pill:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(0, 180, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+/* Card 2: Spill Overview (Compact 2x2 Grid) */
+.spill-stats-2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.metric-stat-box {
+  background: var(--bg-glass-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-top-row {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.metric-number {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.metric-number.crimson {
+  color: var(--accent-crimson);
+}
+.metric-number.emerald {
+  color: var(--accent-emerald);
+}
+.metric-number.amber {
+  color: var(--accent-amber);
+}
+
+.metric-label-muted {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* Card 3: Vessel Analysis (Compact Split Row) */
+.vessels-split-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-glass-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.split-col {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.split-stat-val {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.split-stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Card 4: Hindcast & Forecast Banner (Compact) */
+.hindcast-banner-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 8px 12px;
+}
+
+.banner-left-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.banner-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.banner-sub {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.chevron-arrow {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   FLOATING MAP CONTROLS & SCALE BAR
+   ========================================================================== */
+.map-floating-controls {
+  position: absolute;
+  top: 72px;
+  right: 348px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 25;
+}
+
+.map-control-glass-btn {
+  width: 34px;
+  height: 34px;
+  background: var(--bg-glass-panel);
+  border: 1px solid var(--border-glass);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: var(--blur-val);
+  -webkit-backdrop-filter: var(--blur-val);
+  transition: all 0.2s ease;
+}
+
+.map-control-glass-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.08);
+}
+
+.map-scale-ruler {
+  position: absolute;
+  bottom: 56px;
+  left: 278px;
+  background: var(--bg-glass-panel);
+  border: 1px solid var(--border-glass);
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: #ffffff;
+  z-index: 25;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  backdrop-filter: var(--blur-val);
+}
+
+/* ==========================================================================
+   BOTTOM FLOATING GLASS TELEMETRY FOOTER BAR
+   ========================================================================== */
+.aquashield-bottom-bar {
+  position: absolute;
+  bottom: 10px;
+  left: 16px;
+  right: 16px;
+  height: 40px;
+  background: var(--bg-glass-panel);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  z-index: 50;
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: var(--blur-val);
+  -webkit-backdrop-filter: var(--blur-val);
+}
+
+.footer-sources-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10.5px;
+  color: var(--text-secondary);
+}
+
+.source-dot-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.source-dot-green {
+  width: 5px;
+  height: 5px;
+  background: var(--accent-emerald);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--accent-emerald);
+}
+
+.footer-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.live-badge-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--accent-emerald);
+}
+
+.footer-time-stamp {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.footer-action-glass-btn {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.footer-action-glass-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.footer-action-glass-btn.primary {
+  background: #0071e3;
+  border-color: #0071e3;
+  box-shadow: 0 2px 10px rgba(0, 113, 227, 0.5);
+}
+
+/* ==========================================================================
+   MODALS (EVIDENCE REPORT & UPLOAD)
+   ========================================================================== */
+/* Full-screen dark blurred overlay behind a pop-up. Invisible and unclickable by default
+   (opacity 0 + pointer-events none); JS adds .open to show it with a fade. */
+.tactical-modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(3, 10, 20, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.tactical-modal-backdrop.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.tactical-modal-dialog {
+  background: rgba(14, 28, 50, 0.96);
+  border: 1px solid rgba(0, 210, 255, 0.4);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+  width: 90%;
+  max-width: 960px;
+  max-height: 88vh;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #ffffff;
+}
+
+.modal-header {
+  padding: 14px 20px;
+  background: rgba(10, 22, 40, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  letter-spacing: 0.5px;
+}
+
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.14);
+  border: none;
+  color: #ffffff;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.report-section {
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
+}
+
+.report-section-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}

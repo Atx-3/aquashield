@@ -1,0 +1,30 @@
+{
+  "mmsi": 228406800,
+  "vessel_name": "FREYCINET",
+  "scene_id": "S1A_IW_GRDH_1SDV_20250108T113603_20250108T113633_057352_070EE5",
+  "points_count": 2,
+  "points": [
+    {
+      "timestamp": "2025-01-08T11:29:46+00:00",
+      "latitude": 21.26056,
+      "longitude": -84.26478,
+      "mmsi": 228406800,
+      "vessel_name": "FREYCINET",
+      "sog": 16.7,
+      "cog": 280.3,
+      "heading": 282.0,
+      "imo": "IMO9904211"
+    },
+    {
+      "timestamp": "2025-01-08T11:36:28+00:00",
+      "latitude": 21.26602,
+      "longitude": -84.29767,
+      "mmsi": 228406800,
+      "vessel_name": "FREYCINET",
+      "sog": 16.7,
+      "cog": 280.0,
+      "heading": 282.0,
+      "imo": "IMO9904211"
+    }
+  ]
+}

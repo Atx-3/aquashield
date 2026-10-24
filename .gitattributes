@@ -1,0 +1,6 @@
+# Git Large File Storage (LFS) attributes
+# The model weights (*.pth) and ocean data (*.nc) are not tracked with LFS yet:
+# the copies in this repo are small placeholder stubs. To add the real files later:
+#   git lfs install
+#   git lfs track "*.pth" "*.nc"
+#   (copy the real files in place) && git add .gitattributes backend/models/checkpoints/best_model.pth TEST_EVIDENCE/weather/TEST_OCEAN_001.nc
