@@ -12,6 +12,7 @@ REM    5. check that the AI model file was downloaded (Git LFS)
 REM    6. start the web server and open http://localhost:8000 in your browser
 REM
 REM  To stop the server: close this window, or press Ctrl+C in it.
+REM  Running it again automatically stops an old server still using port 8000.
 REM  NOTE: the first run can take 10+ minutes - PyTorch is a large download (~1 GB).
 REM ======================================================================
 
@@ -105,6 +106,27 @@ goto :model_done
 :model_ok
 echo [5/6] Model weights found.
 :model_done
+echo.
+
+REM ----------------------------------------------------------------------
+REM  STOP ANY OLD SERVER: if something is already listening on port 8000
+REM  (e.g. AQUA SHIELD started earlier and never closed), stop it first so
+REM  the new server can use the port. netstat lists open ports; the 5th
+REM  column is the process ID (PID). /T also stops its child processes.
+REM ----------------------------------------------------------------------
+echo Checking for a server already running on port 8000...
+set "KILLED_OLD="
+for /f "tokens=5" %%P in ('netstat -ano ^| findstr /R /C:":8000 .*LISTENING"') do (
+    if not "%%P"=="0" (
+        taskkill /F /T /PID %%P >nul 2>&1
+        echo   Stopped old server process [PID %%P]
+        set "KILLED_OLD=1"
+    )
+)
+REM Give Windows ~2 seconds to release the port before starting again
+REM (ping is used as a delay because it works in any console window)
+if defined KILLED_OLD ping -n 3 127.0.0.1 >nul
+if not defined KILLED_OLD echo   Port 8000 is free.
 echo.
 
 REM ----------------------------------------------------------------------
