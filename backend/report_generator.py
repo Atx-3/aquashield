@@ -151,7 +151,7 @@ class ReportGenerator:
             "report_timestamp": report_timestamp,
             "status": "OFFICIAL EVIDENCE DOSSIER - READY FOR SUBMISSION",
             "jurisdiction": "Indian Exclusive Economic Zone (EEZ) / Arabian Sea Offshore Sector",
-            "lead_investigator": "AQUA SHIELD Autonomous Intelligence Engine (SIH-2026 AI/ML System)",
+            "lead_investigator": "AQUA SHIELD Autonomous Intelligence Engine",
             "classification_level": "RESTRICTED / MARITIME LAW ENFORCEMENT",
             # One-paragraph summary built from the case data
             "executive_summary": (
